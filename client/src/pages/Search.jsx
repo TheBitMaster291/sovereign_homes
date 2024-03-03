@@ -1,104 +1,130 @@
 import React, { useEffect, useState } from "react";
-import {useNavigate} from 'react-router-dom';
+import { useNavigate } from "react-router-dom";
 import ListingItem from "../components/ListingItem";
 
 const Search = () => {
+  const navigate = useNavigate();
 
-  const navigate=useNavigate();
+  const [sidebardata, setSidebardata] = useState({
+    searchTerm: "",
+    type: "all",
+    parking: false,
+    furnished: false,
+    offer: false,
+    sort: "created_at",
+    order: "desc",
+  });
 
-const [sidebardata,setSidebardata]=useState({
-       searchTerm:'',
-       type:'all',
-       parking:false,
-       furnished:false,
-       offer:false,
-       sort:'created_at',
-       order:'desc',
-});
+  const [loading, setLoading] = useState(false);
+  const [listings, setListings] = useState([]);
+  const [showMore, setShowMore] = useState(false);
 
-const [loading,setLoading]=useState(false);
-const [listings,setListings]=useState([]);
+  useEffect(() => {
+    const urlParams = new URLSearchParams(location.search);
+    const searchTermFromUrl = urlParams.get("searchTerm");
+    const typeFormUrl = urlParams.get("type");
+    const parkingFormUrl = urlParams.get("parking");
+    const furnishedFormUrl = urlParams.get("furnished");
+    const offerFormUrl = urlParams.get("offer");
+    const sortFormUrl = urlParams.get("sort");
+    const orderFormUrl = urlParams.get("order");
 
-useEffect(()=>{
-  const urlParams=new URLSearchParams(location.search);
-  const searchTermFromUrl=urlParams.get('searchTerm');
-  const typeFormUrl=urlParams.get('type');
-  const parkingFormUrl=urlParams.get('parking');
-  const furnishedFormUrl=urlParams.get('furnished');
-  const offerFormUrl=urlParams.get('offer');
-  const sortFormUrl=urlParams.get('sort');
-  const orderFormUrl=urlParams.get('order');
-
-if(
-  searchTermFromUrl||
-  typeFormUrl || 
-  parkingFormUrl ||
-  furnishedFormUrl || 
-  offerFormUrl ||
-  sortFormUrl ||
-  orderFormUrl
-
-){
-  setSidebardata({
-        searchTerm: searchTermFromUrl || '',
-        type:  typeFormUrl || 'all',
-        parking:  parkingFormUrl === 'true' ? true : false,
-        furnished: furnishedFormUrl === 'true' ? true : false,
-        offer: offerFormUrl === 'true' ? true : false,
-        sort: sortFormUrl || 'created_at',
-        order: orderFormUrl || 'desc',
+    if (
+      searchTermFromUrl ||
+      typeFormUrl ||
+      parkingFormUrl ||
+      furnishedFormUrl ||
+      offerFormUrl ||
+      sortFormUrl ||
+      orderFormUrl
+    ) {
+      setSidebardata({
+        searchTerm: searchTermFromUrl || "",
+        type: typeFormUrl || "all",
+        parking: parkingFormUrl === "true" ? true : false,
+        furnished: furnishedFormUrl === "true" ? true : false,
+        offer: offerFormUrl === "true" ? true : false,
+        sort: sortFormUrl || "created_at",
+        order: orderFormUrl || "desc",
       });
-}
+    }
 
-const fetchListings = async () => {
-  setLoading(true);
-  const searchQuery = urlParams.toString();
-  const res = await fetch(`/api/listing/get?${searchQuery}`);
-  const data = await res.json();
- 
-  setListings(data);
-  setLoading(false);
-};
+    const fetchListings = async () => {
+      setLoading(true);
+      const searchQuery = urlParams.toString();
+      const res = await fetch(`/api/listing/get?${searchQuery}`);
+      const data = await res.json();
+      if (data.length > 8) {
+        setShowMore(true);
+      }
+      setListings(data);
+      setLoading(false);
+    };
 
-fetchListings();
+    fetchListings();
+  }, [location.search]);
 
-},[location.search]);
+  const handleChange = (e) => {
+    if (
+      e.target.id === "all" ||
+      e.target.id === "rent" ||
+      e.target.id === "sale"
+    ) {
+      setSidebardata({ ...sidebardata, type: e.target.id });
+    }
 
-const handleChange=(e)=>{
-if(e.target.id==='all' || e.target.id==='rent' || e.target.id==='sale'){
-    setSidebardata({...sidebardata, type:e.target.id})
-}
+    if (e.target.id === "searchTerm") {
+      setSidebardata({ ...sidebardata, searchTerm: e.target.value });
+    }
 
+    if (
+      e.target.id === "parking" ||
+      e.target.id === "furnished" ||
+      e.target.id === "offer"
+    ) {
+      setSidebardata({
+        ...sidebardata,
+        [e.target.id]:
+          e.target.checked || e.target.checked === "true" ? true : false,
+      });
+    }
 
-if(e.target.id === 'searchTerm'){
-    setSidebardata({...sidebardata, searchTerm:e.target.value})
-}
+    if (e.target.id === "sort_order") {
+      const sort = e.target.value.split("_")[0] || "created_at";
+      const order = e.target.value.split("_")[1] || "desc";
+      setSidebardata({ ...sidebardata, sort, order });
+    }
+  };
 
-if(e.target.id === 'parking' || e.target.id==='furnished' || e.target.id==='offer'){
-    setSidebardata({...sidebardata,[e.target.id]:e.target.checked || e.target.checked==='true' ?true:false});
-}
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    URLSearchParams.set("searchTerm", sidebardata.searchTerm);
+    URLSearchParams.set("type", sidebardata.type);
+    URLSearchParams.set("parking", sidebardata.parking);
+    URLSearchParams.set("furnished", sidebardata.furnished);
+    URLSearchParams.set("offer", sidebardata.offer);
+    URLSearchParams.set("sort", sidebardata.sort);
+    URLSearchParams.set("order", sidebardata.order);
+    const searchQuery = urlParams.toString();
+    navigate(`/search?${searchQuery}`);
+  };
 
-if(e.target.id === 'sort_order'){
-    const sort=e.target.value.split('_')[0] || 'created_at';
-    const order=e.target.value.split('_')[1] || 'desc';
-    setSidebardata({...sidebardata,sort,order});
-
-}
-
-};
-
-const handleSubmit=(e)=>{
-  e.preventDefault();
-  URLSearchParams.set('searchTerm',sidebardata.searchTerm)
-  URLSearchParams.set('type',sidebardata.type)
-  URLSearchParams.set('parking',sidebardata.parking)
-  URLSearchParams.set('furnished',sidebardata.furnished)
-  URLSearchParams.set('offer',sidebardata.offer)
-  URLSearchParams.set('sort',sidebardata.sort)
-  URLSearchParams.set('order',sidebardata.order)
-  const searchQuery=urlParams.toString();
-  navigate(`/search?${searchQuery}`);
-};
+  const onShowMoreClick=async()=>{
+    const numberOfListings=listings.length;
+    const startIndex=numberOfListings;
+    const urlParams=new URLSearchParams(location.search);
+    urlParams.set('startIndex',startIndex);
+    const searchQuery=urlParams.toString();
+    const res=await fetch(`/api/listing/get?${searchQuery}`);
+    const data=await res.json();
+    if(data.length<9){
+      setShowMore(false);
+    }
+    else{
+      setShowMore(false);
+    }
+    setListings([...listings,...data]);
+  };
 
   return (
     <div className="flex flex-col md:flex-row">
@@ -113,8 +139,8 @@ const handleSubmit=(e)=>{
               id="searchTerm"
               placeholder="Search..."
               className="border rounded-lg p-3 w-full"
-            value={sidebardata.searchTerm}
-            onChange={handleChange}
+              value={sidebardata.searchTerm}
+              onChange={handleChange}
             />
           </div>
           <div className="flex gap-2 flex-wrap items-center">
@@ -124,8 +150,8 @@ const handleSubmit=(e)=>{
                 type="checkbox"
                 id="all"
                 className="w-5"
-               onChange={handleChange}
-               checked={sidebardata.type==='all'}
+                onChange={handleChange}
+                checked={sidebardata.type === "all"}
               />
               <span>Rent & Sale</span>
             </div>
@@ -135,7 +161,7 @@ const handleSubmit=(e)=>{
                 id="rent"
                 className="w-5"
                 onChange={handleChange}
-                checked={sidebardata.type==='rent'}
+                checked={sidebardata.type === "rent"}
               />
               <span>Rent</span>
             </div>
@@ -145,7 +171,7 @@ const handleSubmit=(e)=>{
                 id="sale"
                 className="w-5"
                 onChange={handleChange}
-                checked={sidebardata.type==='sale'}
+                checked={sidebardata.type === "sale"}
               />
               <span>Sale</span>
             </div>
@@ -168,7 +194,7 @@ const handleSubmit=(e)=>{
                 id="parking"
                 className="w-5"
                 onChange={handleChange}
-               checked={sidebardata.parking}
+                checked={sidebardata.parking}
               />
               <span>Parking</span>
             </div>
@@ -207,21 +233,29 @@ const handleSubmit=(e)=>{
           Listing results:
         </h1>
         <div className="p-7 flex flex-wrap gap-4">
-          {!loading && listings.length===0 && (
+          {!loading && listings.length === 0 && (
             <p className="text-xl text-slate-700">No listing found!</p>
           )}
-          {
-            loading && (
-              <p className="text-xl text-slate-700 text-center w-full">Loading...</p>
-            )
-          }
+          {loading && (
+            <p className="text-xl text-slate-700 text-center w-full">
+              Loading...
+            </p>
+          )}
 
-          {
+          {!loading &&
+            listings &&
+            listings.map((listing) => (
+              <ListingItem key={listing._id} listing={listing} />
+            ))}
 
-            !loading && listings && listings.map((listing)=>(
-              <ListingItem key={listing._id} listing={listing}/>
-            ))
-          }
+          {showMore && (
+            <button
+              onClick={onShowMoreClick}
+              className="text-green-700 hover:underline p-7 text-center w-full"
+            >
+              Show more
+            </button>
+          )}
         </div>
       </div>
     </div>
